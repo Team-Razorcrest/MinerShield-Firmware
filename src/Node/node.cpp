@@ -1,4 +1,7 @@
 #include "node.h"
+#include <WiFi.h>
+#include "constants.h"
+#include "Utils/utils.h"
 
 #ifdef GATEWAY_DEVICE
 
@@ -54,5 +57,33 @@ status_t receive()
 #endif // GATEWAY_DEVICE
 
 #ifdef HELMENT_DEVICE
+status_t init_node()
+{
+    WiFi.mode(WIFI_STA);
+    WiFi.disconnect();
+}
+
+status_t connect()
+{
+    WiFi.begin("SSID", "PASSWORD");
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+    }
+    return OKAY;
+}
+
+status_t send()
+{
+    WiFiClient client;
+  // Connect to the server (AP) on the other ESP32
+  if (client.connect(WiFi.gatewayIP(), 80)) {
+    Serial.println("Connected to server");
+    client.println("Weda httoooo!");  // Send data to the server
+  } else {
+    Serial.println("Connection to server failed");
+    show_error();
+  }
+}
 
 #endif // GATEWAY_DEVICE
