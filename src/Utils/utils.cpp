@@ -6,7 +6,7 @@ void init_error_mechanism() {
 
 status_t show_error() {
   digitalWrite(INBUILT_LED, HIGH);
-  delay(1000);
+  delay(5000);
   digitalWrite(INBUILT_LED, LOW);
   delay(1000);
   return OKAY;
