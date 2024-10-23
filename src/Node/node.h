@@ -1,6 +1,9 @@
 #ifndef __NODE_H__
 #define __NODE_H__
 
+#include "constants.h"
+#include <Arduino.h>
+#include <WiFi.h>
 #include "structs.h"
 
 status_t init_node();
