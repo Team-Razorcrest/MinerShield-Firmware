@@ -24,7 +24,7 @@ void setup()
   status = receive();
 #endif
 #ifdef HELMENT_DEVICE
-  status = send();
+  // status = send();
 #endif
 }
 

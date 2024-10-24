@@ -63,6 +63,77 @@ status_t receive()
 
 WiFiClient client;
 
+String *_get_available_networks()
+{
+    Serial.println("Scanning for WiFi networks...");
+    int n = WiFi.scanNetworks();
+    if (n == 0)
+    {
+        Serial.println("No networks found.");
+        return NULL;
+    }
+    else
+    {
+        // Create an array to hold the SSID and RSSI values
+        String *ssidList = new String[n];
+        int rssiList[n];
+
+        // Get all SSID and RSSI values
+        for (int i = 0; i < n; i++)
+        {
+            ssidList[i] = WiFi.SSID(i);
+            rssiList[i] = WiFi.RSSI(i);
+            Serial.println(ssidList[i]);
+        }
+
+        // Sort the networks by RSSI (signal strength)
+        for (int i = 0; i < n - 1; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                if (rssiList[i] < rssiList[j])
+                { // Sort in descending order (strongest signal first)
+                    // Swap RSSI values
+                    int tempRSSI = rssiList[i];
+                    rssiList[i] = rssiList[j];
+                    rssiList[j] = tempRSSI;
+
+                    // Swap SSID names to match the RSSI swap
+                    String tempSSID = ssidList[i];
+                    ssidList[i] = ssidList[j];
+                    ssidList[j] = tempSSID;
+                }
+            }
+        }
+        return ssidList; // Remember to free this memory when done
+    }
+}
+
+String _generatePassword(const String &ssid, int length = 12)
+{
+    // buffer to hold the hashed result
+    unsigned char hash[32];
+
+    // Perform SHA-256 hashing on the SSID
+    mbedtls_sha256_context sha256_ctx;
+    mbedtls_sha256_init(&sha256_ctx);
+    mbedtls_sha256_starts(&sha256_ctx, 0); // 0 = SHA-256 (not SHA-224)
+    mbedtls_sha256_update(&sha256_ctx, (const unsigned char *)ssid.c_str(), ssid.length());
+    mbedtls_sha256_finish(&sha256_ctx, hash);
+    mbedtls_sha256_free(&sha256_ctx);
+
+    // Convert the hash result to a readable string (hex or base64 style)
+    String password = "";
+    for (int i = 0; i < length; i++)
+    {
+        // Use modulo to stay within the length of the hash (32 bytes)
+        password += String(hash[i % 32], HEX);
+    }
+
+    // Ensure password has the required length
+    return password.substring(0, length);
+}
+
 status_t init_node()
 {
     Serial.begin(115200);
@@ -80,12 +151,8 @@ status_t connect()
 {
     Serial.println("Connecting to WiFi");
     String *networks = _get_available_networks();
-    if (networks == NULL)
-    {
-        Serial.println("No networks found");
-        return ERROR;
-    }
-    for (int i = 0; i <  sizeof(networks) / sizeof(networks[0]); i++)
+
+    for (int i = 0; i < sizeof(networks) / sizeof(networks[0]); i++)
     {
         String SSID = networks[i];
         Serial.println(SSID);
@@ -132,76 +199,6 @@ status_t send()
 
     client.println("Data from Helment");
     return OKAY;
-}
-
-String *_get_available_networks()
-{
-    Serial.println("Scanning for WiFi networks...");
-    int n = WiFi.scanNetworks();
-    if (n == 0)
-    {
-        Serial.println("No networks found.");
-        return NULL;
-    }
-    else
-    {
-        // Create an array to hold the SSID and RSSI values
-        String ssidList[n];
-        int rssiList[n];
-
-        // Get all SSID and RSSI values
-        for (int i = 0; i < n; i++)
-        {
-            ssidList[i] = WiFi.SSID(i);
-            rssiList[i] = WiFi.RSSI(i);
-        }
-
-        // Sort the networks by RSSI (signal strength)
-        for (int i = 0; i < n - 1; i++)
-        {
-            for (int j = i + 1; j < n; j++)
-            {
-                if (rssiList[i] < rssiList[j])
-                { // Sort in descending order (strongest signal first)
-                    // Swap RSSI values
-                    int tempRSSI = rssiList[i];
-                    rssiList[i] = rssiList[j];
-                    rssiList[j] = tempRSSI;
-
-                    // Swap SSID names to match the RSSI swap
-                    String tempSSID = ssidList[i];
-                    ssidList[i] = ssidList[j];
-                    ssidList[j] = tempSSID;
-                }
-            }
-        }
-        return ssidList;
-    }
-}
-
-String _generatePassword(const String &ssid, int length = 12)
-{
-    // buffer to hold the hashed result
-    unsigned char hash[32];
-
-    // Perform SHA-256 hashing on the SSID
-    mbedtls_sha256_context sha256_ctx;
-    mbedtls_sha256_init(&sha256_ctx);
-    mbedtls_sha256_starts(&sha256_ctx, 0); // 0 = SHA-256 (not SHA-224)
-    mbedtls_sha256_update(&sha256_ctx, (const unsigned char *)ssid.c_str(), ssid.length());
-    mbedtls_sha256_finish(&sha256_ctx, hash);
-    mbedtls_sha256_free(&sha256_ctx);
-
-    // Convert the hash result to a readable string (hex or base64 style)
-    String password = "";
-    for (int i = 0; i < length; i++)
-    {
-        // Use modulo to stay within the length of the hash (32 bytes)
-        password += String(hash[i % 32], HEX);
-    }
-
-    // Ensure password has the required length
-    return password.substring(0, length);
 }
 
 #endif // GATEWAY_DEVICE
