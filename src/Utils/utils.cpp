@@ -1,7 +1,6 @@
 #include "utils.h"
 #include "DHT22.h"
 
-#define DHTPIN 32
 DHT22 dht22(DHTPIN);
 
 void init_error_mechanism()
@@ -39,12 +38,24 @@ void readDHT(int arr[2])
   arr[1] = (int)humidity;
 }
 
+int readAnalogSensor(int pin, int numSamples = 10)
+{
+  long total = 0;
+  for (int i = 0; i < numSamples; i++)
+  {
+    total += analogRead(pin);
+    delay(2);
+  }
+
+  return total / numSamples;
+}
+
 int readMethane()
 {
-  return 100;
+  return readAnalogSensor(MQ8_PIN);
 }
 
 bool readFallDetection()
 {
-  return false;
+  return false; // Have to implement this!!!
 }
