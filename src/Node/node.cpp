@@ -3,6 +3,7 @@
 #include "constants.h"
 #include "Utils/utils.h"
 #include <mbedtls/sha256.h>
+#include <ArduinoJson.h>
 
 #ifdef GATEWAY_DEVICE
 
@@ -197,13 +198,30 @@ status_t connect()
         return ERROR;
     }
     Serial.println("Connected to server");
-    client.println("Hello from Helment");
+    char initJson[50];
+    JsonDocument init;
+    init["init"] = "client_connection_notice";
+    serializeJson(init, initJson);
+    client.println(initJson);
     return OKAY;
 }
 
-status_t send(String serialJson)
+status_t send()
 {
-    client.println(serialJson);
+    char dataJson[100];
+    JsonDocument data;
+
+    int dht[2];
+    readDHT(dht);
+
+    data["temperature"] = dht[0];
+    data["humidity"] = dht[1];
+    data["methane"] = readMethane();
+    data["fall_detection"] = readFallDetection();
+
+    serializeJson(data, dataJson);
+    client.println(dataJson);
+    Serial.println(dataJson);
     return OKAY;
 }
 

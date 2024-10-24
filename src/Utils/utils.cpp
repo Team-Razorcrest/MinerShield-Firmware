@@ -11,3 +11,17 @@ status_t show_error() {
   delay(1000);
   return OKAY;
 }
+
+void readDHT(int arr[2]) {
+    
+    arr[0] = 25;  
+    arr[1] = 60;
+}
+
+int readMethane() {
+    return 100; 
+}
+
+bool readFallDetection() {
+    return false;  
+}
