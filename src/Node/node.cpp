@@ -63,49 +63,53 @@ status_t receive()
 
 WiFiClient client;
 
-String *_get_available_networks()
+String *_get_available_networks(int *size)
 {
     Serial.println("Scanning for WiFi networks...");
     int n = WiFi.scanNetworks();
+    *size = n;
     if (n == 0)
     {
         Serial.println("No networks found.");
-        return NULL;
+        return NULL; // No networks found, return NULL
     }
     else
     {
-        // Create an array to hold the SSID and RSSI values
+        // Allocate memory for the SSID list
         String *ssidList = new String[n];
-        int rssiList[n];
+        int *rssiList = new int[n]; // Use dynamic allocation to keep consistency
 
-        // Get all SSID and RSSI values
+        // Populate the arrays with SSID and RSSI values
         for (int i = 0; i < n; i++)
         {
             ssidList[i] = WiFi.SSID(i);
             rssiList[i] = WiFi.RSSI(i);
-            Serial.println(ssidList[i]);
         }
 
-        // Sort the networks by RSSI (signal strength)
+        // Sort by RSSI (signal strength)
         for (int i = 0; i < n - 1; i++)
         {
             for (int j = i + 1; j < n; j++)
             {
                 if (rssiList[i] < rssiList[j])
-                { // Sort in descending order (strongest signal first)
+                { // Sort in descending order
                     // Swap RSSI values
                     int tempRSSI = rssiList[i];
                     rssiList[i] = rssiList[j];
                     rssiList[j] = tempRSSI;
 
-                    // Swap SSID names to match the RSSI swap
+                    // Swap corresponding SSID values
                     String tempSSID = ssidList[i];
                     ssidList[i] = ssidList[j];
                     ssidList[j] = tempSSID;
                 }
             }
         }
-        return ssidList; // Remember to free this memory when done
+
+        // Clean up the RSSI list since we don't return it
+        delete[] rssiList;
+
+        return ssidList;
     }
 }
 
@@ -150,14 +154,17 @@ status_t init_node()
 status_t connect()
 {
     Serial.println("Connecting to WiFi");
-    String *networks = _get_available_networks();
+    int size = 0;
+    String *networks = _get_available_networks(&size);
+    Serial.println("Size: " + (String)size);
 
-    for (int i = 0; i < sizeof(networks) / sizeof(networks[0]); i++)
+    for (int i = 0; i < size; i++)
     {
         String SSID = networks[i];
-        Serial.println(SSID);
+        Serial.println("\nSSID " + (String)i + " " + SSID);
         String password = _generatePassword(SSID);
-        bool res = WiFi.begin(SSID, password);
+        Serial.println("password :" + password);
+        bool res = WiFi.begin(SSID.c_str(), password.c_str());
         if (!res)
             return ERROR;
         int retries = MAX_RETRIES;
@@ -168,6 +175,11 @@ status_t connect()
             if (retries == 0)
                 break;
             retries--;
+        }
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            Serial.println("Connected to WiFi : " + SSID);
+            break;
         }
     }
 
@@ -189,15 +201,9 @@ status_t connect()
     return OKAY;
 }
 
-status_t send()
+status_t send(String serialJson)
 {
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        connect();
-        Serial.println("Connecting to WiFi");
-    }
-
-    client.println("Data from Helment");
+    client.println(serialJson);
     return OKAY;
 }
 
