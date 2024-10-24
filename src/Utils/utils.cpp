@@ -1,10 +1,16 @@
 #include "utils.h"
+#include "DHT22.h"
 
-void init_error_mechanism() {
+#define DHTPIN 32
+DHT22 dht22(DHTPIN);
+
+void init_error_mechanism()
+{
   pinMode(BUILTIN_LED, OUTPUT);
 }
 
-status_t show_error() {
+status_t show_error()
+{
   digitalWrite(BUILTIN_LED, HIGH);
   delay(1000);
   digitalWrite(BUILTIN_LED, LOW);
@@ -12,16 +18,33 @@ status_t show_error() {
   return OKAY;
 }
 
-void readDHT(int arr[2]) {
-    
-    arr[0] = 25;  
-    arr[1] = 60;
+void init_sensors()
+{
 }
 
-int readMethane() {
-    return 100; 
+void readDHT(int arr[2])
+{
+  int temp = (int)dht22.getTemperature();
+  int humidity = (int)dht22.getHumidity();
+
+  if (dht22.getLastError() != dht22.OK)
+  {
+    Serial.print("last error :");
+    Serial.println(dht22.getLastError());
+    arr[0] = (int)temp;
+    arr[1] = (int)humidity;
+    return;
+  }
+  arr[0] = (int)temp;
+  arr[1] = (int)humidity;
 }
 
-bool readFallDetection() {
-    return false;  
+int readMethane()
+{
+  return 100;
+}
+
+bool readFallDetection()
+{
+  return false;
 }
