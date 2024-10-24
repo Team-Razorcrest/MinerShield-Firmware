@@ -2,22 +2,30 @@
 #include "Node/node.h"
 #include "Utils/utils.h"
 
-void setup() {
+void setup()
+{
   init_error_mechanism();
   status_t status = init_node();
-  if(status == ERROR) {
-
+  if (status == ERROR)
+  {
     show_error();
-    ESP.deepSleep(0);
   }
 
   status = connect();
-  if(status == OKAY) {
+  if (status == OKAY)
+  {
     Serial.println("Connected to WiFi");
-  } else {
+  }
+  else
+  {
     show_error();
   }
-  receive();
+#ifdef GATEWAY_DEVICE
+  status = receive();
+#endif
+#ifdef HELMENT_DEVICE
+  status = send();
+#endif
 }
 
 void loop()

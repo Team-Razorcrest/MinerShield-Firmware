@@ -11,17 +11,19 @@ status_t init_node()
 {
     Serial.begin(115200);
     bool res = WiFi.mode(WIFI_AP_STA);
-    if(!res) return ERROR;
-    return OKAY; 
+    if (!res)
+        return ERROR;
+    return OKAY;
 }
 
 status_t connect()
 {
     Serial.println("Connecting to WiFi");
-    bool res  = WiFi.softAP("SSID", "PASSWORD");
+    bool res = WiFi.softAP("SSID", "PASSWORD");
     IPAddress IP = WiFi.softAPIP();
     Serial.print("AP IP address: ");
     Serial.println(IP);
+    server.begin(); // Start the server
     return OKAY;
 }
 
@@ -44,46 +46,73 @@ status_t receive()
             {
                 if (client.available())
                 {
-                    String line = client.readStringUntil('\r');
+                    String line = client.readStringUntil('\n');
                     Serial.print(line);
                 }
             }
-            client.stop();
             Serial.println("Client disconnected");
         }
+        client.stop();
     }
 }
 
 #endif // GATEWAY_DEVICE
 
 #ifdef HELMENT_DEVICE
+
+WiFiClient client;
+
 status_t init_node()
 {
-    WiFi.mode(WIFI_STA);
-    WiFi.disconnect();
+    Serial.begin(115200);
+    bool res = WiFi.mode(WIFI_STA);
+    if (!res)
+        return ERROR;
+    return OKAY;
+    res = WiFi.disconnect();
+    if (!res)
+        return ERROR;
+    return OKAY;
 }
 
 status_t connect()
 {
-    WiFi.begin("SSID", "PASSWORD");
+    Serial.println("Connecting to WiFi");
+    bool res = WiFi.begin("SSID", "PASSWORD");
+    if (!res)
+        return ERROR;
+    int retries = MAX_RETRIES;
     while (WiFi.status() != WL_CONNECTED)
     {
+        Serial.print(".");
         delay(500);
+        if (retries == 0)
+            return ERROR;
+        retries--;
     }
+    Serial.println("\nConnected to WiFi");
+    int res_ = client.connect(WiFi.gatewayIP(), 80);
+    if (res_ < 0)
+    {
+        Serial.println("Connection to server failed");
+        show_error();
+        return ERROR;
+    }
+    Serial.println("Connected to server");
+    client.println("Hello from Helment");
     return OKAY;
 }
 
 status_t send()
 {
-    WiFiClient client;
-  // Connect to the server (AP) on the other ESP32
-  if (client.connect(WiFi.gatewayIP(), 80)) {
-    Serial.println("Connected to server");
-    client.println("Weda httoooo!");  // Send data to the server
-  } else {
-    Serial.println("Connection to server failed");
-    show_error();
-  }
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        connect();
+        Serial.println("Connecting to WiFi");
+    }
+
+    client.println("Data from Helment");
+    return OKAY;
 }
 
 #endif // GATEWAY_DEVICE
