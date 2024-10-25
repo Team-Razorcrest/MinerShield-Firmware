@@ -8,7 +8,7 @@
 #define LED_GREEN 23
 
 
-#define GATEWAY_DEVICE // if device is a gateway
+// #define GATEWAY_DEVICE // if device is a gateway
 // #define HELMET_DEVICE // if device is a helment
 
 #ifdef GATEWAY_DEVICE
