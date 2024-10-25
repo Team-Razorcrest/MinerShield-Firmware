@@ -42,14 +42,7 @@ void setup()
     show_error();
     ESP.restart();
   }
-#endif // HELMET_DEVICE
 
-#ifdef GATEWAY_DEVICE
-  status = receive();
-#endif
-
-
-#ifdef HELMENT_DEVICE
   digitalWrite(LED_RED, HIGH);
   status = send();
   if (status == ERROR)

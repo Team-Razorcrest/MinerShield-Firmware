@@ -218,6 +218,16 @@ status_t receive(String *data)
 
 WiFiClient client;
 
+bool _isArrayEmpty(String arr[], int size) {
+    for (int i = 0; i < size; i++) {
+        if (arr[i].length() > 0) {
+            return false;  // At least one element is not empty
+        }
+    }
+    return true;  // All elements are empty
+}
+
+
 String *_get_available_networks(int *size)
 {
     Serial.println("Scanning for WiFi networks...");
@@ -237,10 +247,17 @@ String *_get_available_networks(int *size)
         // Populate the arrays with SSID and RSSI values
         for (int i = 0; i < n; i++)
         {
-            ssidList[i] = WiFi.SSID(i);
-            rssiList[i] = WiFi.RSSI(i);
+            if (WiFi.SSID(i).substring(0, 5) == "Razor")
+            {
+                ssidList[i] = WiFi.SSID(i);
+                rssiList[i] = WiFi.RSSI(i);
+            } 
         }
-
+        if (_isArrayEmpty(ssidList, n))
+        {
+            Serial.println("No Razor networks found.");
+            ESP.restart();
+        }
         // Sort by RSSI (signal strength)
         for (int i = 0; i < n - 1; i++)
         {
@@ -291,6 +308,8 @@ status_t connect()
     for (int i = 0; i < size; i++)
     {
         String SSID = networks[i];
+        if (SSID.length() == 0)
+            continue;
         Serial.println("\nSSID " + (String)i + " " + SSID);
         String password = _generatePassword(SSID);
         Serial.println("password :" + password);
@@ -337,7 +356,7 @@ status_t connect()
     data["temperature"] = dht[0];
     data["humidity"] = dht[1];
     data["methane"] = readMethane();
-    data["fall_detection"] = 0;
+    data["fall_detection"] = readFallDetection()?1:0;
 
     serializeJson(data, dataJson);
     Serial.println(dataJson);
@@ -357,7 +376,7 @@ status_t send()
     data["temperature"] = dht[0];
     data["humidity"] = dht[1];
     data["methane"] = readMethane();
-    data["fall_detection"] = 0;
+    data["fall_detection"] = readFallDetection()?1:0;
 
     serializeJson(data, dataJson);
     Serial.println(dataJson);
