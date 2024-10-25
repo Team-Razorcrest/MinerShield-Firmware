@@ -1,11 +1,31 @@
 #include "utils.h"
 #include "DHT22.h"
+#include "Adafruit_MPU6050.h"
+#include "Adafruit_Sensor.h"
+#include "Wire.h"
 
 DHT22 dht22(DHTPIN);
+Adafruit_MPU6050 mpu;
 
 void init_error_mechanism()
 {
   pinMode(BUILTIN_LED, OUTPUT);
+  if (!mpu.begin())
+  {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1)
+    {
+      delay(10);
+    }
+  }
+  Serial.println("MPU6050 Found!");
+
+  mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
+  mpu.setMotionDetectionThreshold(1);
+  mpu.setMotionDetectionDuration(20);
+  mpu.setInterruptPinLatch(true);
+  mpu.setInterruptPinPolarity(true);
+  mpu.setMotionInterrupt(true);
 }
 
 status_t show_error()
@@ -57,5 +77,5 @@ int readMethane()
 
 bool readFallDetection()
 {
-  return false; // Have to implement this!!!
+  return mpu.getMotionInterruptStatus();
 }
