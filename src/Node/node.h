@@ -5,11 +5,20 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include "structs.h"
+#include <ArduinoJson.h>
 
 status_t init_node();
 status_t connect();
 status_t disconnect();
 status_t send();
-status_t receive();
+status_t receive(String *data);
+status_t decode_msg(String msg, JsonDocument *dataJson);
+
+
+status_t station_connect();
+status_t mqtt_connect();
+status_t mqtt_msg_publish(String msg);
+status_t mqtt_reconnect();
+
 
 #endif // __NODE_H__
