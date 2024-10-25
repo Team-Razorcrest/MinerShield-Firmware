@@ -198,18 +198,9 @@ status_t connect()
         return ERROR;
     }
     Serial.println("Connected to server");
-    char initJson[50];
-    JsonDocument init;
-    init["init"] = "client_connection_notice";
-    serializeJson(init, initJson);
-    client.println(initJson);
-    return OKAY;
-}
-
-status_t send()
-{
     char dataJson[100];
     JsonDocument data;
+    data["id"] = "AB3422H";
 
     int dht[2];
     readDHT(dht);
@@ -217,11 +208,49 @@ status_t send()
     data["temperature"] = dht[0];
     data["humidity"] = dht[1];
     data["methane"] = readMethane();
-    data["fall_detection"] = readFallDetection();
+    data["fall_detection"] = 0;
 
     serializeJson(data, dataJson);
-    client.println(dataJson);
     Serial.println(dataJson);
+    client.println(dataJson);
+    return OKAY;
+}
+
+status_t send()
+{
+    // char dataJson[100];
+    // JsonDocument data;
+    // data["id"] = "AB3422H";
+    // data["type"] = "Data";
+    // JsonObject devicedata = data.createNestedObject("data");
+
+    // int dht[2];
+    // readDHT(dht);
+
+    // devicedata["temperature"] = dht[0];
+    // devicedata["humidity"] = dht[1];
+    // devicedata["methane"] = readMethane();
+    // devicedata["fall_detection"] = 0;
+
+    // serializeJson(data, dataJson);
+    // client.println(dataJson);
+    // Serial.println(dataJson);
+    // return OKAY;
+        char dataJson[100];
+    JsonDocument data;
+    data["id"] = "AB3422H";
+
+    int dht[2];
+    readDHT(dht);
+
+    data["temperature"] = dht[0];
+    data["humidity"] = dht[1];
+    data["methane"] = readMethane();
+    data["fall_detection"] = 0;
+
+    serializeJson(data, dataJson);
+    Serial.println(dataJson);
+    client.println(dataJson);
     return OKAY;
 }
 
