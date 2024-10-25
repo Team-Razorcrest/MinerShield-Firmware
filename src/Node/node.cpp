@@ -3,10 +3,10 @@
 #include "constants.h"
 #include "Utils/utils.h"
 #include <mbedtls/sha256.h>
+#include <ArduinoJson.h>
 
 #ifdef GATEWAY_DEVICE
 
-#include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 #include "certificate.h"
@@ -175,12 +175,12 @@ status_t decode_msg(String msg, JsonDocument *dataJson)
 
 status_t receive(String *data)
 {
-    unsigned long timeout_ms = 5000;  // Timeout in milliseconds
+    unsigned long timeout_ms = 5000; // Timeout in milliseconds
     Serial.println("Waiting for client");
     bool data_received = false;
-    unsigned long start_time = millis();  // Timeout tracking
+    unsigned long start_time = millis(); // Timeout tracking
 
-    while (1)  // Add a timeout condition
+    while (1) // Add a timeout condition
     {
         WiFiClient client = server.available();
         if (client)
@@ -197,14 +197,16 @@ status_t receive(String *data)
                 }
             }
             Serial.println("Client disconnected");
-            client.stop();  // Close connection properly
-            if (data_received) break;
+            client.stop(); // Close connection properly
+            if (data_received)
+                break;
         }
     }
 
-    if (!data_received) {
+    if (!data_received)
+    {
         Serial.println("Timeout: No data received");
-        return ERROR;  // Return a timeout status if no data was received
+        return ERROR; // Return a timeout status if no data was received
     }
 
     return OKAY;
@@ -212,9 +214,59 @@ status_t receive(String *data)
 
 #endif // GATEWAY_DEVICE
 
-#ifdef HELMENT_DEVICE
+#ifdef HELMET_DEVICE
 
 WiFiClient client;
+
+String *_get_available_networks(int *size)
+{
+    Serial.println("Scanning for WiFi networks...");
+    int n = WiFi.scanNetworks();
+    *size = n;
+    if (n == 0)
+    {
+        Serial.println("No networks found.");
+        return NULL; // No networks found, return NULL
+    }
+    else
+    {
+        // Allocate memory for the SSID list
+        String *ssidList = new String[n];
+        int *rssiList = new int[n]; // Use dynamic allocation to keep consistency
+
+        // Populate the arrays with SSID and RSSI values
+        for (int i = 0; i < n; i++)
+        {
+            ssidList[i] = WiFi.SSID(i);
+            rssiList[i] = WiFi.RSSI(i);
+        }
+
+        // Sort by RSSI (signal strength)
+        for (int i = 0; i < n - 1; i++)
+        {
+            for (int j = i + 1; j < n; j++)
+            {
+                if (rssiList[i] < rssiList[j])
+                { // Sort in descending order
+                    // Swap RSSI values
+                    int tempRSSI = rssiList[i];
+                    rssiList[i] = rssiList[j];
+                    rssiList[j] = tempRSSI;
+
+                    // Swap corresponding SSID values
+                    String tempSSID = ssidList[i];
+                    ssidList[i] = ssidList[j];
+                    ssidList[j] = tempSSID;
+                }
+            }
+        }
+
+        // Clean up the RSSI list since we don't return it
+        delete[] rssiList;
+
+        return ssidList;
+    }
+}
 
 status_t init_node()
 {
@@ -232,19 +284,41 @@ status_t init_node()
 status_t connect()
 {
     Serial.println("Connecting to WiFi");
-    bool res = WiFi.begin("SSID", "PASSWORD");
-    if (!res)
-        return ERROR;
-    int retries = MAX_RETRIES;
-    while (WiFi.status() != WL_CONNECTED)
+    int size = 0;
+    String *networks = _get_available_networks(&size);
+    Serial.println("Size: " + (String)size);
+
+    for (int i = 0; i < size; i++)
     {
-        Serial.print(".");
-        delay(500);
-        if (retries == 0)
+        String SSID = networks[i];
+        Serial.println("\nSSID " + (String)i + " " + SSID);
+        String password = _generatePassword(SSID);
+        Serial.println("password :" + password);
+        bool res = WiFi.begin(SSID.c_str(), password.c_str());
+        if (!res)
             return ERROR;
-        retries--;
+        int retries = MAX_RETRIES;
+        while (WiFi.status() != WL_CONNECTED)
+        {
+            Serial.print(".");
+            delay(500);
+            if (retries == 0)
+                break;
+            retries--;
+        }
+        if (WiFi.status() == WL_CONNECTED)
+        {
+            Serial.println("Connected to WiFi : " + SSID);
+            break;
+        }
     }
-    Serial.println("\nConnected to WiFi");
+
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        Serial.println("Connection to WiFi failed");
+        return ERROR;
+    }
+
     int res_ = client.connect(WiFi.gatewayIP(), 80);
     if (res_ < 0)
     {
@@ -253,19 +327,41 @@ status_t connect()
         return ERROR;
     }
     Serial.println("Connected to server");
-    client.println("Hello from Helment");
+    char dataJson[100];
+    JsonDocument data;
+    data["id"] = "AB3422H";
+
+    int dht[2];
+    readDHT(dht);
+
+    data["temperature"] = dht[0];
+    data["humidity"] = dht[1];
+    data["methane"] = readMethane();
+    data["fall_detection"] = 0;
+
+    serializeJson(data, dataJson);
+    Serial.println(dataJson);
+    client.println(dataJson);
     return OKAY;
 }
 
 status_t send()
 {
-    while (WiFi.status() != WL_CONNECTED)
-    {
-        connect();
-        Serial.println("Connecting to WiFi");
-    }
+    char dataJson[100];
+    JsonDocument data;
+    data["id"] = "AB3422H";
 
-    client.println("Data from Helment");
+    int dht[2];
+    readDHT(dht);
+
+    data["temperature"] = dht[0];
+    data["humidity"] = dht[1];
+    data["methane"] = readMethane();
+    data["fall_detection"] = 0;
+
+    serializeJson(data, dataJson);
+    Serial.println(dataJson);
+    client.println(dataJson);
     return OKAY;
 }
 

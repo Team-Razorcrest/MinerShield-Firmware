@@ -2,12 +2,14 @@
 #define __CONSTANTS_H__
 
 #define MAX_RETRIES 10
+#define WAKEUP_INTERVAL 1
 
 #define LED_RED 4
 #define LED_GREEN 23
 
+
 // #define GATEWAY_DEVICE // if device is a gateway
-#define HELMENT_DEVICE // if device is a helment
+#define HELMET_DEVICE // if device is a helment
 
 #ifdef GATEWAY_DEVICE
 
@@ -26,5 +28,11 @@
 
 #endif
 
+#ifdef HELMET_DEVICE
+
+#define DHTPIN 32
+#define MQ8_PIN 34
+
+#endif // HELMENT_DEVICE
 
 #endif // __CONSTANTS_H__
