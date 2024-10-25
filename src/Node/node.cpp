@@ -3,16 +3,25 @@
 #include "constants.h"
 #include "Utils/utils.h"
 #include <mbedtls/sha256.h>
+
+#ifdef GATEWAY_DEVICE
+
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 #include <WiFiClientSecure.h>
 #include "certificate.h"
+
+#endif // GATEWAY_DEVICE
+
+#ifdef GATEWAY_DEVICE
 
 WiFiClientSecure secureClient;
 PubSubClient mqttClient(secureClient);
 
 const char *mqtt_username = "minershield";
 const char *mqtt_password = "ms2024";
+
+#endif // GATEWAY_DEVICE
 
 String _generatePassword(const String &ssid, int length = 12)
 {
@@ -260,4 +269,4 @@ status_t send()
     return OKAY;
 }
 
-#endif // GATEWAY_DEVICE
+#endif // HELMENT_DEVICE

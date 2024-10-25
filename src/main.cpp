@@ -3,22 +3,29 @@
 #include "Utils/utils.h"
 #include <ArduinoJson.h>
 
-#define LED_RED 23
-#define LED_GREEN 4
+#ifdef GATEWAY_DEVICE
 
 JsonDocument dataJson;
-  device_mode_t mode = ACCESS_POINT;
+device_mode_t mode = ACCESS_POINT;
+
+#endif // GATEWAY_DEVICE
 
 void setup()
 {
   pinMode(LED_RED, OUTPUT);
   pinMode(LED_GREEN, OUTPUT);
+
+#ifdef GATEWAY_DEVICE
+
   init_error_mechanism();
   mode = ACCESS_POINT;
+
+#endif // GATEWAY_DEVICE
 }
 
 void loop()
 {
+#ifdef GATEWAY_DEVICE
   if (mode == ACCESS_POINT)
   {
     digitalWrite(LED_RED, HIGH);
@@ -109,4 +116,6 @@ void loop()
     }
     digitalWrite(LED_GREEN, LOW);
   }
+
+#endif // GATEWAY_DEVICE
 }
