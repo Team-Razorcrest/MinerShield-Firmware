@@ -32,7 +32,8 @@
 
 #define DHTPIN 32
 #define MQ8_PIN 34
-
-#endif // HELMENT_DEVICE
-
+#define MAX_RETRIES 10
+#define WAKEUP_INTERVAL 0.25
+#define LED_RED 23
+#define LED_GREEN 4
 #endif // __CONSTANTS_H__
