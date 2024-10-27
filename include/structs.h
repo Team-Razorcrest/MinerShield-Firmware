@@ -6,4 +6,9 @@ typedef enum {
     ERROR = 1
 } status_t;
 
+typedef enum {
+    STATION = 0,
+    ACCESS_POINT = 1
+} device_mode_t;
+
 #endif // __STRUCTS_H__
